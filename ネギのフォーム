@@ -9,13 +9,13 @@
         font-family: Arial, sans-serif;
     }
     .container {
-        max-width: 400px;
+        max-width: 600px;
         margin: 50px auto;
         padding: 20px;
         border: 1px solid #ccc;
         border-radius: 5px;
     }
-    input[type="text"], input[type="number"], input[type="submit"] {
+    input[type="text"], input[type="number"] {
         width: 100%;
         padding: 10px;
         margin: 5px 0;
@@ -23,12 +23,15 @@
         border-radius: 3px;
         box-sizing: border-box;
     }
-    input[type="submit"] {
+    .add-frame {
         background-color: #4CAF50;
         color: white;
+        padding: 10px 20px;
+        border: none;
+        border-radius: 3px;
         cursor: pointer;
     }
-    input[type="submit"]:hover {
+    .add-frame:hover {
         background-color: #45a049;
     }
 </style>
@@ -36,26 +39,78 @@
 <body>
 
 <div class="container">
-    <h2>ネギのフォーム</h2>
+    <h2>ネギの観察フォーム</h2>
     <form id="leekForm">
-        <label for="name">名前：</label>
-        <input type="text" id="name" name="name" required>
-        <label for="age">年齢：</label>
-        <input type="number" id="age" name="age" required>
-        <input type="submit" value="送信">
+        <div id="formFields">
+            <div class="form-frame">
+                <label for="observationDate">観察日：</label>
+                <input type="text" name="observationDate" required>
+                <label for="variety">品種：</label>
+                <input type="text" name="variety" required>
+                <label for="leafCount">葉枚数：</label>
+                <input type="number" name="leafCount" required>
+                <label for="leafLength">葉長（cm）：</label>
+                <input type="number" name="leafLength" required>
+                <label for="plantHeight">草丈（cm）：</label>
+                <input type="number" name="plantHeight" required>
+                <label for="sheathWidth">葉鞘経（mm）：</label>
+                <input type="number" name="sheathWidth" required>
+            </div>
+        </div>
+        <button type="button" class="add-frame" onclick="addFrame()">枠を追加</button>
+        <button type="submit">送信</button>
     </form>
     <div id="output"></div>
 </div>
 
 <script>
+    function addFrame() {
+        var formFields = document.getElementById('formFields');
+        var frame = document.createElement('div');
+        frame.classList.add('form-frame');
+        frame.innerHTML = `
+            <label for="observationDate">観察日：</label>
+            <input type="text" name="observationDate" required>
+            <label for="variety">品種：</label>
+            <input type="text" name="variety" required>
+            <label for="leafCount">葉枚数：</label>
+            <input type="number" name="leafCount" required>
+            <label for="leafLength">葉長（cm）：</label>
+            <input type="number" name="leafLength" required>
+            <label for="plantHeight">草丈（cm）：</label>
+            <input type="number" name="plantHeight" required>
+            <label for="sheathWidth">葉鞘経（mm）：</label>
+            <input type="number" name="sheathWidth" required>
+        `;
+        formFields.appendChild(frame);
+    }
+
     document.getElementById('leekForm').addEventListener('submit', function(event) {
         event.preventDefault();
-        var name = document.getElementById('name').value;
-        var age = document.getElementById('age').value;
-        var output = document.getElementById('output');
-        output.innerHTML = '<p>名前: ' + name + '</p><p>年齢: ' + age + '</p>';
+        var formData = new FormData(this);
+        var object = {};
+        formData.forEach(function(value, key){
+            object[key] = value;
+        });
+        var jsonData = JSON.stringify(object);
+        google.script.run.addData(jsonData);
+        document.getElementById('leekForm').reset();
+        alert('データが送信されました！');
     });
 </script>
 
 </body>
 </html>
+
+function processData(jsonData) {
+  var spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
+  var outputSheet = createOrGetOutputSheet(spreadsheet, 'ネギの記入用'); // 転記先シートの名前を変更
+  var data = JSON.parse(jsonData);
+
+  var outputData = [];
+  for (var key in data) {
+    outputData.push(data[key]);
+  }
+
+  writeOutputData(outputSheet, outputData);
+}
